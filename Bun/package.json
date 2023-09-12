@@ -1,0 +1,15 @@
+{
+  "name": "tuplite.js",
+  "module": "tuplite.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "go": "bun run tuplite.ts",
+    "compile": "bun build --minify --compile tuplite.ts"
+  }
+}
