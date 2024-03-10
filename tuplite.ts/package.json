@@ -1,0 +1,36 @@
+{
+  "name": "tuplite",
+  "version": "1.0.1",
+  "description": "A zero-config, zero-SQL type based DB interface (for SQLite)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blobbybilb/Tuplite.git"
+  },
+  "prepublish": "tsc",
+  "keywords": [
+    "db",
+    "sqlite",
+    "nosql",
+    "orm",
+    "typescript",
+    "type",
+    "safe"
+  ],
+  "author": "blobbybilb",
+  "license": "LGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/blobbybilb/Tuplite/issues"
+  },
+  "homepage": "https://github.com/blobbybilb/Tuplite#readme",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3"
+  }
+}
