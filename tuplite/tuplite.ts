@@ -14,6 +14,10 @@ class TupliteDB {
         return new TupliteDB(await getCorrectSQLiteWrapper(path))
     }
 
+    static openWithWrapper(wrapper: SQLiteWrapper): TupliteDB {
+        return new TupliteDB(wrapper)
+    }
+
     openTable<T extends TupliteItem>(table: string): TupliteTable<T> {
         return new TupliteTable<T>(this.dbWrapper, table)
     }

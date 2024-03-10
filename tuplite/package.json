@@ -3,10 +3,12 @@
   "module": "test.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@swc/cli": "^0.3.10",
+    "@swc/core": "^1.4.6",
+    "@types/bun": "latest",
+    "typescript": "^5.4.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  },
-  "dependencies": {}
+  }
 }
