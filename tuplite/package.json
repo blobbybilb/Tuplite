@@ -1,6 +1,6 @@
 {
   "name": "tuplite",
-  "module": "test.ts",
+  "module": "index.js",
   "type": "module",
   "devDependencies": {
     "@swc/cli": "^0.3.10",
@@ -10,5 +10,6 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  }
+  },
+  "types": "index.d.ts"
 }
