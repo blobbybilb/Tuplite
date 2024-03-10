@@ -63,7 +63,7 @@ class TupliteTable<T extends TupliteItem> {
         let queryResult: T[]
 
         if ((Object.values(query).filter((value) => typeof value !== "function") as TupliteValues[]).length === 0) {
-            queryResult = this.dbWrapper.getAsItems(this.table, `SELECT * FROM ${this.table}`)
+            queryResult = this.dbWrapper.getAsItems(`SELECT * FROM ${this.table}`)
         } else {
             const queryKeys = Object.entries(query)
                 .filter(([_, value]) => typeof value !== "function")
@@ -74,7 +74,7 @@ class TupliteTable<T extends TupliteItem> {
 
             const queryKeysString = queryKeys.join(", ")
             queryResult = this.dbWrapper
-                .getAsItems(this.table, `SELECT * FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`)
+                .getAsItems(`SELECT * FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`)
         }
 
         for (const [key, value] of Object.entries(query)) {

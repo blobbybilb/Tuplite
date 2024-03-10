@@ -25,7 +25,7 @@ export class BetterSQLiteWrapper extends SQLiteWrapper {
     tableExists = (table: string) =>
         this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table) ? true : false
 
-    getAsItems<T extends TupliteItem>(table: string, query: string): T[] {
+    getAsItems<T extends TupliteItem>(query: string): T[] {
         return this.db.prepare(query).all() as T[]
     }
 }

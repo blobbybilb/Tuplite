@@ -1,0 +1,11 @@
+{
+  "imports": { "@db/sqlite": "jsr:@db/sqlite@^0.11.0" },
+  "name": "@blob/tuplite",
+  "version": "1.0.0",
+  "exports": "./index.ts",
+  "unstable": ["sloppy-imports", "ffi"],
+  "publish": {
+    "include": ["."],
+    "exclude": ["bun-sqlite-wrapper.ts", "deno-sqlite-wasm-wrapper.ts"]
+  }
+}
