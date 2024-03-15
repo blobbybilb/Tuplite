@@ -1,5 +1,5 @@
-import { type TupliteItem, type TupliteValues } from "./types.js";
-import type { SQLiteWrapper } from "./wrapper.js";
+import { type TupliteItem, type TupliteValues } from "./types.js"
+import type { SQLiteWrapper } from "./wrapper.js"
 
 function getSQLType(value: TupliteValues): string {
   // Removed because it causes errors (also probably safer)
@@ -9,38 +9,39 @@ function getSQLType(value: TupliteValues): string {
 
   switch (typeof value) {
     case "string":
-      return "TEXT";
+      return "TEXT"
     case "number":
-      return "REAL";
+      return "REAL"
     case "boolean":
-      return "INTEGER";
+      return "INTEGER"
     default:
-      throw new Error(`Invalid type: ${value}`);
+      throw new Error(`Invalid type: ${value}`)
   }
 }
 
 function getRowType(item: TupliteItem): string[] {
-  return Object.entries(item).map(([_, value]) => getSQLType(value));
+  return Object.entries(item).map(([_, value]) => getSQLType(value))
 }
 
 async function getCorrectSQLiteWrapper(path?: string): Promise<SQLiteWrapper> {
   if (typeof Bun !== "undefined") {
-    return new (await import("./bun-sqlite-wrapper.js")).BunSQLiteWrapper(path);
+    return new (await import("./bun-sqlite-wrapper.js")).BunSQLiteWrapper(path)
   }
   if (typeof Deno !== "undefined") {
     if (typeof Deno.dlopen === "undefined") {
-      return new (await import("./deno-sqlite-wasm-wrapper.ts"))
-        .DenoSQLiteWASMWrapper(path);
+      return new (
+        await import("./deno-sqlite-wasm-wrapper.ts")
+      ).DenoSQLiteWASMWrapper(path)
     }
 
-    return new (await import("./deno-sqlite-ffi-wrapper.ts"))
-      .DenoSQLiteFFIWrapper(
-      path,
-    );
+    return new (
+      await import("./deno-sqlite-ffi-wrapper.ts")
+    ).DenoSQLiteFFIWrapper(path)
   } else {
-    return new (await import("./node-better-sqlite-wrapper.js"))
-      .BetterSQLiteWrapper(path);
+    return new (
+      await import("./node-better-sqlite-wrapper.js")
+    ).BetterSQLiteWrapper(path)
   }
 }
 
-export { getCorrectSQLiteWrapper, getRowType, getSQLType };
+export { getCorrectSQLiteWrapper, getRowType, getSQLType }

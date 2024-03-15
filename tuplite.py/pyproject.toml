@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "tuplite"
+version = "0.1.0"
+description = "A zero-config, zero-SQL type based DB interface (for SQLite)"
+authors = ["blobbybilb <notablob@outlook.com>"]
+license = "LGPLv2.1"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
