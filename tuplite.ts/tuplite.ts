@@ -5,7 +5,7 @@ import type {
   ValueQueryItem,
   FunctionsQueryItem,
 } from "./types.js"
-import { getCorrectSQLiteWrapper, getRowType } from "./utils.js"
+import { getCorrectSQLiteWrapper, getRowType, getWhereString } from "./utils.js"
 import { type SQLiteWrapper } from "./wrapper.js"
 
 class TupliteDB {
@@ -84,25 +84,11 @@ class TupliteTable<T extends TupliteItem> {
     return [valuesQuery, functionsQuery]
   }
 
-  getWhereString(query: ValueQueryItem<T>): string {
-    let queryKeys = Object.keys(query)
-
-    if (queryKeys.length === 0) {
-      return ""
-    }
-
-    const queryValuesString = Object.values(query)
-      .map((value) => (typeof value === "string" ? `'${value}'` : value))
-      .join(", ")
-    const queryKeysString = queryKeys.join(", ")
-    return ` WHERE (${queryKeysString}) = (${queryValuesString})`
-  }
-
   getRowIDs(query: ValueQueryItem<T>): number[] {
-    // console.log(this.getWhereString(query))
+    // console.log(getWhereString<T>(query))
     return this.dbWrapper
       .getAs<{ rowid: number }>(
-        `SELECT rowid FROM ${this.table} ${this.getWhereString(query)}`
+        `SELECT rowid FROM ${this.table} ${getWhereString<T>(query)}`
       )
       .map((item) => item.rowid)
   }
@@ -121,7 +107,7 @@ class TupliteTable<T extends TupliteItem> {
 
     if (Object.values(query).every((value) => typeof value !== "function")) {
       return this.dbWrapper.getAs<T>(
-        `SELECT * FROM ${this.table} ${this.getWhereString(
+        `SELECT * FROM ${this.table} ${getWhereString<T>(
           query as unknown as ValueQueryItem<T>
         )}`
       )
@@ -151,7 +137,7 @@ class TupliteTable<T extends TupliteItem> {
   del(query: QueryItem<T> = {}) {
     if (Object.values(query).every((value) => typeof value !== "function")) {
       this.dbWrapper.runQuery(
-        `DELETE FROM ${this.table} ${this.getWhereString(
+        `DELETE FROM ${this.table} ${getWhereString<T>(
           query as unknown as ValueQueryItem<T>
         )}`
       )
@@ -183,7 +169,7 @@ class TupliteTable<T extends TupliteItem> {
       this.dbWrapper.runQuery(
         `UPDATE ${this.table} SET ${Object.entries(newItem)
           .map(([key, value]) => `${key} = ${value}`)
-          .join(", ")} ${this.getWhereString(
+          .join(", ")} ${getWhereString<T>(
           item as unknown as ValueQueryItem<T>
         )}`
       )

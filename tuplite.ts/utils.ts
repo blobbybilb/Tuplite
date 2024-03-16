@@ -1,4 +1,8 @@
-import { type TupliteItem, type TupliteValues } from "./types.js"
+import {
+  ValueQueryItem,
+  type TupliteItem,
+  type TupliteValues,
+} from "./types.js"
 import type { SQLiteWrapper } from "./wrapper.js"
 
 function getSQLType(value: TupliteValues): string {
@@ -23,6 +27,22 @@ function getRowType(item: TupliteItem): string[] {
   return Object.entries(item).map(([_, value]) => getSQLType(value))
 }
 
+function getWhereString<T extends TupliteItem>(
+  query: ValueQueryItem<T>
+): string {
+  let queryKeys = Object.keys(query)
+
+  if (queryKeys.length === 0) {
+    return ""
+  }
+
+  const queryValuesString = Object.values(query)
+    .map((value) => (typeof value === "string" ? `'${value}'` : value))
+    .join(", ")
+  const queryKeysString = queryKeys.join(", ")
+  return ` WHERE (${queryKeysString}) = (${queryValuesString})`
+}
+
 async function getCorrectSQLiteWrapper(path?: string): Promise<SQLiteWrapper> {
   if (typeof Bun !== "undefined") {
     return new (await import("./bun-sqlite-wrapper.js")).BunSQLiteWrapper(path)
@@ -44,4 +64,4 @@ async function getCorrectSQLiteWrapper(path?: string): Promise<SQLiteWrapper> {
   }
 }
 
-export { getCorrectSQLiteWrapper, getRowType, getSQLType }
+export { getCorrectSQLiteWrapper, getRowType, getSQLType, getWhereString }
