@@ -31,7 +31,7 @@ export class BetterSQLiteWrapper extends SQLiteWrapper {
       ? true
       : false
 
-  getAsItems<T extends TupliteItem>(query: string): T[] {
+  getAs<T>(query: string): T[] {
     return this.db.prepare(query).all() as T[]
   }
 }

@@ -69,36 +69,42 @@ class TupliteTable<T extends TupliteItem> {
     )
   }
 
-  getNonFunctions(query: ValueQueryItem<T>): T[] {
+  splitQuery(query: QueryItem<T>): [ValueQueryItem<T>, FunctionsQueryItem<T>] {
+    let valuesQuery: ValueQueryItem<T> = {}
+    let functionsQuery: FunctionsQueryItem<T> = {}
+    for (const [key, value] of Object.entries(query)) {
+      if (typeof value === "function") {
+        // @ts-ignore
+        functionsQuery[key] = value
+      } else {
+        // @ts-ignore
+        valuesQuery[key] = value
+      }
+    }
+    return [valuesQuery, functionsQuery]
+  }
+
+  getWhereString(query: ValueQueryItem<T>): string {
     let queryKeys = Object.keys(query)
 
     if (queryKeys.length === 0) {
-      return this.dbWrapper.getAsItems(`SELECT * FROM ${this.table}`)
+      return ""
     }
 
     const queryValuesString = Object.values(query)
       .map((value) => (typeof value === "string" ? `'${value}'` : value))
       .join(", ")
     const queryKeysString = queryKeys.join(", ")
-    return this.dbWrapper.getAsItems(
-      `SELECT * FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
-    )
+    return ` WHERE (${queryKeysString}) = (${queryValuesString})`
   }
 
   getRowIDs(query: ValueQueryItem<T>): number[] {
-    let queryKeys = Object.keys(query)
-
-    if (queryKeys.length === 0) {
-      return this.dbWrapper.getRowIDs(`SELECT rowid FROM ${this.table}`)
-    }
-
-    const queryValuesString = Object.values(query)
-      .map((value) => (typeof value === "string" ? `'${value}'` : value))
-      .join(", ")
-    const queryKeysString = queryKeys.join(", ")
-    return this.dbWrapper.getRowIDs(
-      `SELECT rowid FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
-    )
+    // console.log(this.getWhereString(query))
+    return this.dbWrapper
+      .getAs<{ rowid: number }>(
+        `SELECT rowid FROM ${this.table} ${this.getWhereString(query)}`
+      )
+      .map((item) => item.rowid)
   }
 
   get(query: QueryItem<T> = {}): T[] {
@@ -113,32 +119,26 @@ class TupliteTable<T extends TupliteItem> {
     - for each rowid, get the item and check if it matches the functions
     */
 
-    // ----------------- NEW CODE -----------------
     if (Object.values(query).every((value) => typeof value !== "function")) {
-      return this.getNonFunctions(query as unknown as ValueQueryItem<T>)
+      return this.dbWrapper.getAs<T>(
+        `SELECT * FROM ${this.table} ${this.getWhereString(
+          query as unknown as ValueQueryItem<T>
+        )}`
+      )
     }
 
-    let valuesQuery: ValueQueryItem<T> = {}
-    let functionsQuery: FunctionsQueryItem<T> = {}
-    for (const [key, value] of Object.entries(query)) {
-      if (typeof value === "function") {
-        // @ts-ignore
-        functionsQuery[key] = value
-      } else {
-        // @ts-ignore
-        valuesQuery[key] = value
-      }
-    }
+    let [valuesQuery, functionsQuery] = this.splitQuery(query)
 
     let rowIDs = this.getRowIDs(valuesQuery)
     let queryResult: T[] = []
 
     rowIDs.forEach((rowID) => {
-      let item = this.dbWrapper.getAsItems<T>(
+      let item = this.dbWrapper.getAs<T>(
         `SELECT * FROM ${this.table} WHERE rowid = ${rowID}`
       )[0]
 
       if (
+        // @ts-ignore
         Object.entries(functionsQuery).every(([key, value]) => value(item[key]))
       ) {
         queryResult.push(item)
@@ -146,66 +146,70 @@ class TupliteTable<T extends TupliteItem> {
     })
 
     return queryResult
-
-    // ----------------- OLD CODE -----------------
-
-    let queryResult: T[]
-
-    if (
-      (
-        Object.values(query).filter(
-          (value) => typeof value !== "function"
-        ) as TupliteValues[]
-      ).length === 0
-    ) {
-      queryResult = this.dbWrapper.getAsItems(`SELECT * FROM ${this.table}`)
-    } else {
-      const queryKeys = Object.entries(query)
-        .filter(([_, value]) => typeof value !== "function")
-        .map(([key, _]) => `${key}`)
-      const queryValuesString = Object.values(query)
-        .filter((value) => typeof value !== "function")
-        .map((value) => (typeof value === "string" ? `'${value}'` : value))
-        .join(", ")
-
-      const queryKeysString = queryKeys.join(", ")
-      queryResult = this.dbWrapper.getAsItems(
-        `SELECT * FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
-      )
-    }
-
-    for (const [key, value] of Object.entries(query)) {
-      if (typeof value === "function") {
-        queryResult = queryResult.filter((item) => value(item[key]))
-      }
-    }
-
-    return queryResult
   }
 
-  del(item: QueryItem<T> = {}) {
-    const queryKeys = Object.keys(item)
-    const queryValuesString = Object.values(item)
-      .map((value) => (typeof value === "string" ? `'${value}'` : value))
-      .join(", ")
-
-    if (queryKeys.length === 0) {
-      this.dbWrapper.runQuery(`DELETE FROM ${this.table}`)
+  del(query: QueryItem<T> = {}) {
+    if (Object.values(query).every((value) => typeof value !== "function")) {
+      this.dbWrapper.runQuery(
+        `DELETE FROM ${this.table} ${this.getWhereString(
+          query as unknown as ValueQueryItem<T>
+        )}`
+      )
       return
     }
 
-    const queryKeysString = queryKeys.join(", ")
-    this.dbWrapper.runQuery(
-      `DELETE FROM ${this.table} WHERE ${queryKeysString} = (${queryValuesString})`
-    )
+    let [valuesQuery, functionsQuery] = this.splitQuery(query)
+
+    let rowIDs = this.getRowIDs(valuesQuery)
+
+    rowIDs.forEach((rowID) => {
+      let item = this.dbWrapper.getAs<T>(
+        `SELECT * FROM ${this.table} WHERE rowid = ${rowID}`
+      )[0]
+
+      if (
+        // @ts-ignore
+        Object.entries(functionsQuery).every(([key, value]) => value(item[key]))
+      ) {
+        this.dbWrapper.runQuery(
+          `DELETE FROM ${this.table} WHERE rowid = ${rowID}`
+        )
+      }
+    })
   }
 
-  update(item: TupliteItem, newItem: TupliteItem) {
-    const oldItems = this.get(item as QueryItem<T>) // TODO ensure this is correct
-    this.del(item)
-    for (const oldItem of oldItems) {
-      this.add({ ...oldItem, ...newItem })
+  update(item: QueryItem<T>, newItem: ValueQueryItem<T>) {
+    if (Object.values(item).every((value) => typeof value !== "function")) {
+      this.dbWrapper.runQuery(
+        `UPDATE ${this.table} SET ${Object.entries(newItem)
+          .map(([key, value]) => `${key} = ${value}`)
+          .join(", ")} ${this.getWhereString(
+          item as unknown as ValueQueryItem<T>
+        )}`
+      )
+      return
     }
+
+    let [valuesQuery, functionsQuery] = this.splitQuery(item)
+
+    let rowIDs = this.getRowIDs(valuesQuery)
+
+    rowIDs.forEach((rowID) => {
+      let item = this.dbWrapper.getAs<T>(
+        `SELECT * FROM ${this.table} WHERE rowid = ${rowID}`
+      )[0]
+
+      if (
+        // @ts-ignore
+        Object.entries(functionsQuery).every(([key, value]) => value(item[key]))
+      ) {
+        this.dbWrapper.runQuery(
+          `UPDATE ${this.table} SET ${Object.entries(newItem)
+            .map(([key, value]) => `${key} = ${value}`)
+            .join(", ")} WHERE rowid = ${rowID}`
+        )
+      }
+    })
   }
 }
 

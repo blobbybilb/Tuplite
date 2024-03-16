@@ -44,7 +44,38 @@ console.log(
 
 console.log(
   "Get with function:",
-  testTable.get({ testint1: (value) => value > 1 }).length === 2
+  testTable.get({
+    testint1: (value) => value > 1,
+    teststr1: (v) => v.startsWith("t"),
+  }).length === 2,
+  testTable.get({
+    testint1: (value) => value > 1,
+    testbool1: true,
+  }).length === 1
 )
 
-console.log("\n\n\n")
+testTable.del({
+  testint1: (value) => value > 0,
+})
+console.log("All items deleted: ", testTable.get().length === 0)
+
+testTable.add({ teststr1: "test1", testint1: 1, testbool1: true })
+testTable.add({ teststr1: "test2", testint1: 2, testbool1: false })
+testTable.add({ teststr1: "test3", testint1: 3, testbool1: true })
+
+testTable.update({ teststr1: "test2" }, { testint1: 20, testbool1: true })
+
+console.log(
+  "Update:",
+  testTable.get({ teststr1: "test2" })[0].testint1 === 20,
+  testTable.get({ teststr1: "test2" })[0].testbool1 == true
+)
+
+testTable.update({ testint1: (value) => value > 1 }, { testint1: 10 * 10 })
+
+console.log(
+  "Update with function:",
+  testTable.get({ testint1: 100 }).length === 2
+)
+
+console.log("\n")

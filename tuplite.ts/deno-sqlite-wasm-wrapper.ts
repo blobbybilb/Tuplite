@@ -30,7 +30,7 @@ export class DenoSQLiteWASMWrapper extends SQLiteWrapper {
   //       ? true
   //       : false;
 
-  getAsItems<T extends TupliteItem>(query: string): T[] {
+  getAs<T>(query: string): T[] {
     return this.db.queryEntries(query) as unknown as T[]
   }
 }

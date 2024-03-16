@@ -4,8 +4,7 @@ abstract class SQLiteWrapper {
   abstract runQuery(sql: string): void
   abstract listTables(): string[]
   tableExists = (table: string) => this.listTables().includes(table)
-  abstract getAsItems<T extends TupliteItem>(query: string): T[]
-  abstract getRowIDs(query: string): number[]
+  abstract getAs<T>(query: string): T[]
 }
 
 export { SQLiteWrapper }

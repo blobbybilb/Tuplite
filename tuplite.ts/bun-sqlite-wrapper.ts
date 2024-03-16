@@ -31,7 +31,7 @@ export class BunSQLiteWrapper extends SQLiteWrapper {
       ? true
       : false
 
-  getAsItems<T extends TupliteItem>(query: string): T[] {
+  getAs<T>(query: string): T[] {
     return this.db.query(query).all() as T[]
   }
 }
