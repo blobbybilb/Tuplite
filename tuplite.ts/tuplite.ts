@@ -1,11 +1,10 @@
-import type {
-  QueryItem,
-  TupliteItem,
-  TupliteValues,
-  ValueQueryItem,
-  FunctionsQueryItem,
-} from "./types.js"
-import { getCorrectSQLiteWrapper, getRowType, getWhereString } from "./utils.js"
+import type { QueryItem, TupliteItem, ValueQueryItem } from "./types.js"
+import {
+  getCorrectSQLiteWrapper,
+  getRowType,
+  getWhereString,
+  splitQuery,
+} from "./utils.js"
 import { type SQLiteWrapper } from "./wrapper.js"
 
 class TupliteDB {
@@ -69,26 +68,22 @@ class TupliteTable<T extends TupliteItem> {
     )
   }
 
-  splitQuery(query: QueryItem<T>): [ValueQueryItem<T>, FunctionsQueryItem<T>] {
-    let valuesQuery: ValueQueryItem<T> = {}
-    let functionsQuery: FunctionsQueryItem<T> = {}
-    for (const [key, value] of Object.entries(query)) {
-      if (typeof value === "function") {
-        // @ts-ignore
-        functionsQuery[key] = value
-      } else {
-        // @ts-ignore
-        valuesQuery[key] = value
-      }
-    }
-    return [valuesQuery, functionsQuery]
-  }
-
   getRowIDs(query: ValueQueryItem<T>): number[] {
-    // console.log(getWhereString<T>(query))
+    let queryKeys = Object.keys(query)
+
+    if (queryKeys.length === 0) {
+      return this.dbWrapper
+        .getAs<{ rowid: number }>(`SELECT rowid FROM ${this.table}`)
+        .map((item) => item.rowid)
+    }
+
+    const queryValuesString = Object.values(query)
+      .map((value) => (typeof value === "string" ? `'${value}'` : value))
+      .join(", ")
+    const queryKeysString = queryKeys.join(", ")
     return this.dbWrapper
       .getAs<{ rowid: number }>(
-        `SELECT rowid FROM ${this.table} ${getWhereString<T>(query)}`
+        `SELECT rowid FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
       )
       .map((item) => item.rowid)
   }
@@ -113,7 +108,7 @@ class TupliteTable<T extends TupliteItem> {
       )
     }
 
-    let [valuesQuery, functionsQuery] = this.splitQuery(query)
+    let [valuesQuery, functionsQuery] = splitQuery<T>(query)
 
     let rowIDs = this.getRowIDs(valuesQuery)
     let queryResult: T[] = []
@@ -144,7 +139,7 @@ class TupliteTable<T extends TupliteItem> {
       return
     }
 
-    let [valuesQuery, functionsQuery] = this.splitQuery(query)
+    let [valuesQuery, functionsQuery] = splitQuery<T>(query)
 
     let rowIDs = this.getRowIDs(valuesQuery)
 
@@ -176,7 +171,7 @@ class TupliteTable<T extends TupliteItem> {
       return
     }
 
-    let [valuesQuery, functionsQuery] = this.splitQuery(item)
+    let [valuesQuery, functionsQuery] = splitQuery<T>(item)
 
     let rowIDs = this.getRowIDs(valuesQuery)
 
