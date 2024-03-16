@@ -1,4 +1,10 @@
-import type { QueryItem, TupliteItem, TupliteValues } from "./types.js"
+import type {
+  QueryItem,
+  TupliteItem,
+  TupliteValues,
+  ValueQueryItem,
+  FunctionsQueryItem,
+} from "./types.js"
 import { getCorrectSQLiteWrapper, getRowType } from "./utils.js"
 import { type SQLiteWrapper } from "./wrapper.js"
 
@@ -63,9 +69,85 @@ class TupliteTable<T extends TupliteItem> {
     )
   }
 
+  getNonFunctions(query: ValueQueryItem<T>): T[] {
+    let queryKeys = Object.keys(query)
+
+    if (queryKeys.length === 0) {
+      return this.dbWrapper.getAsItems(`SELECT * FROM ${this.table}`)
+    }
+
+    const queryValuesString = Object.values(query)
+      .map((value) => (typeof value === "string" ? `'${value}'` : value))
+      .join(", ")
+    const queryKeysString = queryKeys.join(", ")
+    return this.dbWrapper.getAsItems(
+      `SELECT * FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
+    )
+  }
+
+  getRowIDs(query: ValueQueryItem<T>): number[] {
+    let queryKeys = Object.keys(query)
+
+    if (queryKeys.length === 0) {
+      return this.dbWrapper.getRowIDs(`SELECT rowid FROM ${this.table}`)
+    }
+
+    const queryValuesString = Object.values(query)
+      .map((value) => (typeof value === "string" ? `'${value}'` : value))
+      .join(", ")
+    const queryKeysString = queryKeys.join(", ")
+    return this.dbWrapper.getRowIDs(
+      `SELECT rowid FROM ${this.table} WHERE (${queryKeysString}) = (${queryValuesString})`
+    )
+  }
+
   get(query: QueryItem<T> = {}): T[] {
     // query is an object where the keys are the column names
     // and the values can either be a value to match or a function to filter
+
+    /*
+    - if query is empty, return all items
+    - if query contains no functions, return items that match the query
+    - if query contains only functions, get rowid of all items
+    - otherwise, get rowid of items that match the query
+    - for each rowid, get the item and check if it matches the functions
+    */
+
+    // ----------------- NEW CODE -----------------
+    if (Object.values(query).every((value) => typeof value !== "function")) {
+      return this.getNonFunctions(query as unknown as ValueQueryItem<T>)
+    }
+
+    let valuesQuery: ValueQueryItem<T> = {}
+    let functionsQuery: FunctionsQueryItem<T> = {}
+    for (const [key, value] of Object.entries(query)) {
+      if (typeof value === "function") {
+        // @ts-ignore
+        functionsQuery[key] = value
+      } else {
+        // @ts-ignore
+        valuesQuery[key] = value
+      }
+    }
+
+    let rowIDs = this.getRowIDs(valuesQuery)
+    let queryResult: T[] = []
+
+    rowIDs.forEach((rowID) => {
+      let item = this.dbWrapper.getAsItems<T>(
+        `SELECT * FROM ${this.table} WHERE rowid = ${rowID}`
+      )[0]
+
+      if (
+        Object.entries(functionsQuery).every(([key, value]) => value(item[key]))
+      ) {
+        queryResult.push(item)
+      }
+    })
+
+    return queryResult
+
+    // ----------------- OLD CODE -----------------
 
     let queryResult: T[]
 
@@ -101,7 +183,7 @@ class TupliteTable<T extends TupliteItem> {
     return queryResult
   }
 
-  del(item: TupliteItem) {
+  del(item: QueryItem<T> = {}) {
     const queryKeys = Object.keys(item)
     const queryValuesString = Object.values(item)
       .map((value) => (typeof value === "string" ? `'${value}'` : value))

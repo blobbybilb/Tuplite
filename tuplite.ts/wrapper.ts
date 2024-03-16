@@ -5,6 +5,7 @@ abstract class SQLiteWrapper {
   abstract listTables(): string[]
   tableExists = (table: string) => this.listTables().includes(table)
   abstract getAsItems<T extends TupliteItem>(query: string): T[]
+  abstract getRowIDs(query: string): number[]
 }
 
 export { SQLiteWrapper }
