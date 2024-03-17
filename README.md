@@ -73,7 +73,7 @@ type QueryItem<T extends TupliteItem> = {
 
 Then, I decided to make it a proper project, making it work with Deno and Node, and not doing questionable things like loading all the rows into memory when querying by functions (it now checks them one at a time). I made some final improvements (like allowing queries by function in `del` and `mod` as well as in `get`), and I think it is now feature complete and ready to be used.
 
-As for a Python version: looking at what makes me like the TypeScript version and considering the differences in what the type systems of the two languages can do, I think I will wait until I need it for some project again. Currently, I don't think there's a way to make something like the TS mapped types above in Python.
+As for a Python version: looking at what makes me like the TypeScript version and considering the differences in what the type systems of the two languages can do, I think I will wait until I need it for some project again. Currently, I don't think there's a way to make something like the TS mapped types above in Python, which would make it lose the things that make it nice/friendly to use, while still being much more narrow than existing libraries.
 
 ## License
 
