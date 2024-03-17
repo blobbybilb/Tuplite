@@ -39,3 +39,21 @@ dc.x = 3
 print(nt, type(nt))
 print(td, type(td))
 print(dc, type(dc))
+
+
+from typing import Union, Dict, Callable
+
+# TupliteValues
+TupliteValues = Union[str, int, bool]
+
+# TupliteItem
+TupliteItem = Dict[str, TupliteValues]
+
+# QueryItem (Generic)
+QueryItem = Dict[str, Union[TupliteValues, Callable[[TupliteValues], bool]]]
+
+# ValueQueryItem
+ValueQueryItem = Dict[str, TupliteValues]
+
+# FunctionsQueryItem
+FunctionsQueryItem = Dict[str, Callable[[TupliteValues], bool]]
