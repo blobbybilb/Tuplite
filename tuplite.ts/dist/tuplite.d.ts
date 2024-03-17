@@ -5,16 +5,19 @@ declare class TupliteDB {
     private constructor();
     static open(path?: string): Promise<TupliteDB>;
     static openWithWrapper(wrapper: SQLiteWrapper): TupliteDB;
-    openTable<T extends TupliteItem>(table: string): TupliteTable<T>;
+    openTable<T extends TupliteItem>(table: string, indices?: (keyof QueryItem<T>)[]): TupliteTable<T>;
     deleteTable(table: string): void;
 }
 declare class TupliteTable<T extends TupliteItem> {
     dbWrapper: SQLiteWrapper;
     table: string;
     tableExists: boolean;
-    boolTables: string[];
-    constructor(dbWrapper: SQLiteWrapper, table: string);
-    private setBoolTables;
+    boolColumns: (keyof T)[];
+    indices: string[];
+    constructor(dbWrapper: SQLiteWrapper, table: string, indices?: string[]);
+    private getCurrentIndices;
+    private createIndices;
+    private setBoolColumns;
     private convertBool;
     createTable(item: T): void;
     add(item: T): void;

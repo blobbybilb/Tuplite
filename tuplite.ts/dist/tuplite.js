@@ -10,8 +10,9 @@ class TupliteDB {
     static openWithWrapper(wrapper) {
         return new TupliteDB(wrapper);
     }
-    openTable(table) {
-        return new TupliteTable(this.dbWrapper, table);
+    openTable(table, indices = []) {
+        // @ts-ignore
+        return new TupliteTable(this.dbWrapper, table, indices);
     }
     deleteTable(table) {
         this.dbWrapper.runQuery(`DROP TABLE ${table}`);
@@ -21,23 +22,49 @@ class TupliteTable {
     dbWrapper;
     table;
     tableExists;
-    boolTables = [];
-    constructor(dbWrapper, table) {
+    boolColumns = [];
+    indices = [];
+    constructor(dbWrapper, table, indices = []) {
         this.dbWrapper = dbWrapper;
         this.table = table;
         this.tableExists = this.dbWrapper.tableExists(table);
-        if (this.tableExists)
-            this.setBoolTables();
+        this.indices = indices;
+        if (this.tableExists) {
+            this.setBoolColumns();
+            this.createIndices(indices);
+        }
     }
-    setBoolTables() {
-        this.boolTables = this.dbWrapper
+    getCurrentIndices() {
+        const l = ("idx_tuplite_" + this.table + "_").length;
+        return this.dbWrapper
+            .getAs("PRAGMA index_list(" + this.table + ")")
+            .filter((item) => item.name.startsWith("idx_tuplite_" + this.table + "_"))
+            .map((item) => item.name.substring(l));
+    }
+    createIndices(indices) {
+        this.getCurrentIndices().forEach((index) => {
+            if (!indices.includes(index)) {
+                console.log("Dropping index", index);
+                this.dbWrapper.runQuery(`DROP INDEX idx_tuplite_${this.table}_${index}`);
+            }
+        });
+        const existingIndices = this.getCurrentIndices();
+        indices.forEach((index) => {
+            if (!existingIndices.includes(index)) {
+                console.log("Creating index", index);
+                this.dbWrapper.runQuery(`CREATE INDEX idx_tuplite_${this.table}_${index} ON ${this.table} (${index})`);
+            }
+        });
+    }
+    setBoolColumns() {
+        this.boolColumns = this.dbWrapper
             .getAs("PRAGMA table_info(" + this.table + ")")
             .filter((item) => item.type === "INTEGER_boolean")
             .map((item) => item.name);
     }
     convertBool(items) {
         return items.map((item) => {
-            for (const boolTable of this.boolTables) {
+            for (const boolTable of this.boolColumns) {
                 const value = item[boolTable];
                 if (value === 0) {
                     // @ts-ignore
@@ -58,7 +85,8 @@ class TupliteTable {
             .join(", ");
         this.dbWrapper.runQuery(`CREATE TABLE IF NOT EXISTS ${this.table} (${rowItemsString})`);
         this.tableExists = true;
-        this.setBoolTables();
+        this.setBoolColumns();
+        this.createIndices(this.indices);
     }
     add(item) {
         if (!this.tableExists)

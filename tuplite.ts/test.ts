@@ -1,5 +1,5 @@
 import { TupliteDB } from "./tuplite.js"
-import type { QueryItem, TupliteItem } from "./types.js"
+import type { TupliteItem } from "./types.js"
 
 console.log("\n\n\n")
 

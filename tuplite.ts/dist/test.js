@@ -1,7 +1,7 @@
 import { TupliteDB } from "./tuplite.js";
 console.log("\n\n\n");
 const db = await TupliteDB.open();
-const testTable = db.openTable("test");
+const testTable = db.openTable("test", ["teststr1", "testint1"]);
 console.log("Tables at start:", db.dbWrapper.listTables(), "Table not exists:", !testTable.tableExists);
 testTable.add({ teststr1: "test1", testint1: 1, testbool1: true });
 console.log("Tables after add:", db.dbWrapper.listTables(), "Table exists:", testTable.tableExists);
@@ -89,4 +89,20 @@ testTable2.del({ testint2: (value) => value < 3 });
 console.log("Delete with function:", testTable2.get().length === 2);
 testTable2.mod({ testint2: (value) => value > 2 }, { testint2: 100 });
 console.log("Update with function:", testTable2.get({ testint2: 100 }).length === 2);
+// console.log("\n")
+// const testTable3 = db.openTable<TestItem1>("test_3", ["teststr1", "testint1"])
+// console.log(testTable3.getCurrentIndices())
+// testTable3.add({ teststr1: "test1", testint1: 1, testbool1: true })
+// console.log(testTable3.getCurrentIndices())
+// const testTable3_2 = db.openTable<TestItem2>("test_3", [
+//   "testbool1",
+//   "testint1",
+// ])
+// console.log(testTable3_2.getCurrentIndices())
+// console.log(
+//   db
+//     .openTable<TestItem1>("test_3", ["teststr1", "testint1", "testbool1"])
+//     .getCurrentIndices()
+// )
+// console.log(db.openTable<TestItem1>("test_3", []).getCurrentIndices())
 console.log("\n\n\n");
