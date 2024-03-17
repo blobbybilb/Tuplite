@@ -1,0 +1,12 @@
+{
+  "version": "3",
+  "remote": {
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/bun-sqlite-wrapper.js": "b505d6f9a7e6dd02bea0a8cf1c4a09b2263e6fe3f3e5fe1eb3ce03631953d13e",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/index.js": "6068b52589e1ad614d96b900a1061c8c112bdc1521429ed468ddecb1f24c80e0",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/node-better-sqlite-wrapper.js": "28831366be66856e998308e3895d8819661cf0fcdb13403fe9de73d655414ada",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/tuplite.js": "000cfbac2b68fd9e0275b3b784c4fb7788e68d55bd1255cb39f3a2db17411305",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/utils.js": "a892889a38545363c932d65e683bbb6e02a478e1db4a21785e30e4f68d46e4a9",
+    "https://raw.githubusercontent.com/blobbybilb/Tuplite/main/tuplite.ts/dist/wrapper.js": "a5eb3a7afb032054fa6a63fa4791716286792908873747f002584917cc854596"
+  }
+}
