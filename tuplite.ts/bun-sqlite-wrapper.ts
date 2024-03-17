@@ -1,4 +1,3 @@
-import type { TupliteItem } from "./types.js"
 import { SQLiteWrapper } from "./wrapper.js"
 import { Database } from "bun:sqlite"
 

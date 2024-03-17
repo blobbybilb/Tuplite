@@ -22,8 +22,11 @@ class TupliteDB {
     return new TupliteDB(wrapper)
   }
 
-  openTable<T extends TupliteItem>(table: string): TupliteTable<T> {
-    return new TupliteTable<T>(this.dbWrapper, table)
+  openTable<T extends TupliteItem>(
+    table: string,
+    indices: (keyof T)[] = []
+  ): TupliteTable<T> {
+    return new TupliteTable<T>(this.dbWrapper, table, indices)
   }
 
   deleteTable(table: string) {
@@ -35,23 +38,100 @@ class TupliteTable<T extends TupliteItem> {
   dbWrapper: SQLiteWrapper
   table: string
   tableExists: boolean
+  boolColumns: (keyof T)[] = []
+  indices: (keyof T)[] = []
 
-  constructor(dbWrapper: SQLiteWrapper, table: string) {
+  constructor(
+    dbWrapper: SQLiteWrapper,
+    table: string,
+    indices: (keyof T)[] = []
+  ) {
     this.dbWrapper = dbWrapper
     this.table = table
     this.tableExists = this.dbWrapper.tableExists(table)
+    this.indices = indices
+
+    if (this.tableExists) {
+      this.setBoolColumns()
+      this.createIndices(indices)
+
+      console.log(
+        1111,
+        this.dbWrapper.getAs("PRAGMA index_list(" + this.table + ")")
+      )
+    }
+  }
+
+  // index name: idx_tuplite_table_column
+
+  private getCurrentIndices(): (keyof T)[] {
+    const l = ("idx_tuplite_" + this.table + "_").length
+    return this.dbWrapper
+      .getAs<{ name: string }>("PRAGMA index_list(" + this.table + ")")
+      .filter((item) => item.name.startsWith("idx_tuplite_" + this.table + "_"))
+      .map((item) => item.name.substring(l))
+  }
+
+  private createIndices(indices: (keyof T)[]) {
+    this.getCurrentIndices().forEach((index) => {
+      if (!indices.includes(index)) {
+        this.dbWrapper.runQuery(`DROP INDEX idx_tuplite_${this.table}_${index}`)
+      }
+    })
+
+    indices.forEach((index) => {
+      if (!this.getCurrentIndices().includes(index)) {
+        this.dbWrapper.runQuery(
+          `CREATE INDEX idx_tuplite_${this.table}_${index} ON ${this.table} (${index})`
+        )
+      }
+    })
+  }
+
+  // private setIndices(indices: (keyof T)[]) {
+
+  private setBoolColumns() {
+    this.boolColumns = this.dbWrapper
+      .getAs<{ name: string; type: string }>(
+        "PRAGMA table_info(" + this.table + ")"
+      )
+      .filter((item) => item.type === "INTEGER_boolean")
+      .map((item) => item.name)
+  }
+
+  private convertBool(items: T[]): T[] {
+    return items.map((item) => {
+      for (const boolTable of this.boolColumns) {
+        const value = item[boolTable]
+        if (value === 0) {
+          // @ts-ignore
+          item[boolTable] = false
+        } else if (value === 1) {
+          // @ts-ignore
+          item[boolTable] = true
+        }
+      }
+      return item
+    })
   }
 
   createTable(item: T) {
     const rowType = getRowType(item)
     const rowItemsString = Object.keys(item)
-      .map((name, index) => `${name} ${rowType[index]}`)
+      .map((name) => `${name} ${rowType[name]}`)
       .join(", ")
 
     this.dbWrapper.runQuery(
       `CREATE TABLE IF NOT EXISTS ${this.table} (${rowItemsString})`
     )
     this.tableExists = true
+
+    this.setBoolColumns()
+    this.createIndices(this.indices)
+    console.log(
+      1111,
+      this.dbWrapper.getAs("PRAGMA index_list(" + this.table + ")")
+    )
   }
 
   add(item: T) {
@@ -68,7 +148,7 @@ class TupliteTable<T extends TupliteItem> {
     )
   }
 
-  getRowIDs(query: ValueQueryItem<T>): number[] {
+  private getRowIDs(query: ValueQueryItem<T>): number[] {
     let queryKeys = Object.keys(query)
 
     if (queryKeys.length === 0) {
@@ -100,12 +180,15 @@ class TupliteTable<T extends TupliteItem> {
     - for each rowid, get the item and check if it matches the functions
     */
 
+    if (!this.tableExists) return []
+
     if (Object.values(query).every((value) => typeof value !== "function")) {
-      return this.dbWrapper.getAs<T>(
+      const items = this.dbWrapper.getAs<T>(
         `SELECT * FROM ${this.table} ${getWhereString<T>(
           query as unknown as ValueQueryItem<T>
         )}`
       )
+      return this.convertBool(items)
     }
 
     let [valuesQuery, functionsQuery] = splitQuery<T>(query)
@@ -126,10 +209,12 @@ class TupliteTable<T extends TupliteItem> {
       }
     })
 
-    return queryResult
+    return this.convertBool(queryResult)
   }
 
   del(query: QueryItem<T> = {}) {
+    if (!this.tableExists) return
+
     if (Object.values(query).every((value) => typeof value !== "function")) {
       this.dbWrapper.runQuery(
         `DELETE FROM ${this.table} ${getWhereString<T>(
@@ -159,19 +244,21 @@ class TupliteTable<T extends TupliteItem> {
     })
   }
 
-  update(item: QueryItem<T>, newItem: ValueQueryItem<T>) {
-    if (Object.values(item).every((value) => typeof value !== "function")) {
+  mod(query: QueryItem<T>, modifications: ValueQueryItem<T>) {
+    if (!this.tableExists) return
+
+    if (Object.values(query).every((value) => typeof value !== "function")) {
       this.dbWrapper.runQuery(
-        `UPDATE ${this.table} SET ${Object.entries(newItem)
+        `UPDATE ${this.table} SET ${Object.entries(modifications)
           .map(([key, value]) => `${key} = ${value}`)
           .join(", ")} ${getWhereString<T>(
-          item as unknown as ValueQueryItem<T>
+          query as unknown as ValueQueryItem<T>
         )}`
       )
       return
     }
 
-    let [valuesQuery, functionsQuery] = splitQuery<T>(item)
+    let [valuesQuery, functionsQuery] = splitQuery<T>(query)
 
     let rowIDs = this.getRowIDs(valuesQuery)
 
@@ -185,7 +272,7 @@ class TupliteTable<T extends TupliteItem> {
         Object.entries(functionsQuery).every(([key, value]) => value(item[key]))
       ) {
         this.dbWrapper.runQuery(
-          `UPDATE ${this.table} SET ${Object.entries(newItem)
+          `UPDATE ${this.table} SET ${Object.entries(modifications)
             .map(([key, value]) => `${key} = ${value}`)
             .join(", ")} WHERE rowid = ${rowID}`
         )

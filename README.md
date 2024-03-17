@@ -2,61 +2,71 @@
 
 A zero-config, zero-SQL type based DB interface (for SQLite)
 
-Made for TypeScript and Python.
+Made for TypeScript and Python, and uses their type systems to provide a fully managed, type-safe, and easy to use DB interface.
+
+## Install
+
+```bash
+npm install tuplite # Node
+deno add @blob/tuplite # Deno
+bun install tuplite # Bun
+
+pip install tuplite # Python (WIP)
+```
 
 ## Usage
 
 **TypeScript:**
+
 ```typescript
-import { TupliteDB, type TupliteItem } from "tuplite"
+import { TupliteDB, type TupliteItem } from "tuplite";
 
-const db = await TupliteDB.open();
+// Opens a DB file, or uses an in-memory DB if no path is given
+// Automatically uses the right SQLite library for Node/Deno/Bun
+const db = await TupliteDB.open("test.db");
 
+// Define your normal typescript type
 interface User extends TupliteItem {
   id: number;
-  pass: string;
+  name: string;
   active: boolean;
 }
 
+// Just give Tuplite your TS type and a table name. That's it! No SQL, schema-ing, etc.
+const users = db.openTable<User>("user");
 
-const testTable = db.openTable<TestItem1>("test");
-console.log(
-  "Tables at start:",
-  db.dbWrapper.listTables(),
-  "Table exists:",
-  testTable.tableExists
-);
-testTable.add({ teststr1: "test1", testint1: 1, testbool1: true });
-console.log(
-  "Tables after add:",
-  db.dbWrapper.listTables(),
-  "Table exists:",
-  testTable.tableExists
-);
-testTable.add({ teststr1: "test2", testint1: 2, testbool1: false });
-testTable.add({ teststr1: "test3", testint1: 3, testbool1: true });
-console.log("3 Items added: ", testTable.get().length === 3);
-testTable.del({ teststr1: "test2" });
-console.log("Item deleted: ", testTable.get().length === 2);
-testTable.del({});
-testTable.add({ teststr1: "test1", testint1: 1, testbool1: true });
-testTable.add({ teststr1: "test2", testint1: 2, testbool1: false });
-testTable.add({ teststr1: "test3", testint1: 3, testbool1: true });
-console.log("3 Items added: ", testTable.get().length === 3);
-console.log(
-  "Basic get:",
-  testTable.get({ teststr1: "test2" }).length === 1,
-  testTable.get({ teststr1: "test2" })[0].testint1 === 2,
-  testTable.get({ teststr1: "test3" })[0].testint1 === 3
-);
+// Start using your DB table with a simple interface, with full type checking!
+users.add({ id: 1, name: "test1", active: true });
+users.add({ id: 2, name: "test2", active: false });
 
-console.log(
-  "Get with function:",
-  testTable.get({ testint1: (value) => value > 1 }).length === 2
-);
+// Query the DB by 0 or more properties, again with full type checking
+users.get({ id: 1 }); // [{ id: 1, name: "test1", active: true }]
 
-console.log("\n\n\n");
+// Pass in a function for more advanced querying, with... full type checking!
+users.get({ name: (name) => name.endsWith("2") }); // [{ id: 2, name: "test2", active: false }]
 
+// updating and deleting is just as easy, and guess what it has? Full type checking!
+users.mod({ id: 1 }, { name: "test1-updated" }); // modifies the 1st item to: [{ id: 1, name: "test1-updated", active: true }]
+
+users.del({ active: false }); // deletes inactive users
+
+// And that's the entire API
 ```
+
+## History/Name
+
+This project started as "a python NamedTuple based interface to SQLite" (hence the name) as part of another project, mostly because I didn't like SQL and wanted a zero-dev-overhead way to use SQLite. I then wanted something like this for a TypeScript project, so I made a TypeScript version that worked only in Bun, and added more features like querying by functions, powered by fun TypeScript stuff like this:
+
+```typescript
+// from types.ts
+type TupliteItem = Record<string, TupliteValues>;
+type QueryItem<T extends TupliteItem> = {
+  [P in keyof T as string extends P ? never : P]?:
+    | T[P]
+    | ((arg: T[P]) => boolean);
+};
+```
+
+Then, I decided to make it a proper project, making it work with Deno and Node, and not doing questionable things like loading all the rows into memory when querying by functions (it now checks them one at a time). I made some final improvements (like allowing queries by function in `del` and `mod` as well as in `get`), and I think it is now feature complete and ready to be used.
 
 TODO create index option?

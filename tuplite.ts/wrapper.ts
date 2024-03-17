@@ -1,5 +1,3 @@
-import type { TupliteItem } from "./types.js"
-
 abstract class SQLiteWrapper {
   abstract runQuery(sql: string): void
   abstract listTables(): string[]

@@ -1,6 +1,7 @@
-import type { TupliteItem } from "./types.ts"
+// @ts-ignore
 import { SQLiteWrapper } from "./wrapper.ts"
-// import { DB } from "https://deno.land/x/sqlite/mod.ts";
+// @ts-ignore
+import { DB } from "https://deno.land/x/sqlite/mod.ts"
 
 export class DenoSQLiteWASMWrapper extends SQLiteWrapper {
   dbPath: string

@@ -19,14 +19,18 @@ function getSQLType(value: TupliteValues): string {
     case "number":
       return "REAL"
     case "boolean":
-      return "INTEGER"
+      return "INTEGER_boolean"
     default:
       throw new Error(`Invalid type: ${value}`)
   }
 }
 
-function getRowType(item: TupliteItem): string[] {
-  return Object.entries(item).map(([_, value]) => getSQLType(value))
+function getRowType(item: TupliteItem): { [key: string]: string } {
+  let rowType: { [key: string]: string } = {}
+  for (const [key, value] of Object.entries(item)) {
+    rowType[key] = getSQLType(value)
+  }
+  return rowType
 }
 
 function getWhereString<T extends TupliteItem>(
@@ -63,19 +67,21 @@ function splitQuery<T extends TupliteItem>(
 }
 
 async function getCorrectSQLiteWrapper(path?: string): Promise<SQLiteWrapper> {
+  // @ts-ignore
   if (typeof Bun !== "undefined") {
     return new (await import("./bun-sqlite-wrapper.js")).BunSQLiteWrapper(path)
   }
+  // @ts-ignore
   if (typeof Deno !== "undefined") {
+    // @ts-ignore
     if (typeof Deno.dlopen === "undefined") {
-      return new (
-        await import("./deno-sqlite-wasm-wrapper.ts")
-      ).DenoSQLiteWASMWrapper(path)
+      return new // @ts-ignore
+      (await import("./deno-sqlite-wasm-wrapper.ts")).DenoSQLiteWASMWrapper(
+        path
+      )
     }
-
-    return new (
-      await import("./deno-sqlite-ffi-wrapper.ts")
-    ).DenoSQLiteFFIWrapper(path)
+    return new // @ts-ignore
+    (await import("./deno-sqlite-ffi-wrapper.ts")).DenoSQLiteFFIWrapper(path)
   } else {
     return new (
       await import("./node-better-sqlite-wrapper.js")

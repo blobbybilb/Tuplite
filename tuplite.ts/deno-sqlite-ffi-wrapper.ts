@@ -1,4 +1,3 @@
-import type { TupliteItem } from "./types.ts"
 import { SQLiteWrapper } from "./wrapper.ts"
 import { Database } from "jsr:@db/sqlite@0.11"
 
