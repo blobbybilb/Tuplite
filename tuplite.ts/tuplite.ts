@@ -24,8 +24,9 @@ class TupliteDB {
 
   openTable<T extends TupliteItem>(
     table: string,
-    indices: (keyof T)[] = []
+    indices: (keyof QueryItem<T>)[] = []
   ): TupliteTable<T> {
+    // @ts-ignore
     return new TupliteTable<T>(this.dbWrapper, table, indices)
   }
 
@@ -39,13 +40,9 @@ class TupliteTable<T extends TupliteItem> {
   table: string
   tableExists: boolean
   boolColumns: (keyof T)[] = []
-  indices: (keyof T)[] = []
+  indices: string[] = []
 
-  constructor(
-    dbWrapper: SQLiteWrapper,
-    table: string,
-    indices: (keyof T)[] = []
-  ) {
+  constructor(dbWrapper: SQLiteWrapper, table: string, indices: string[] = []) {
     this.dbWrapper = dbWrapper
     this.table = table
     this.tableExists = this.dbWrapper.tableExists(table)
@@ -54,17 +51,10 @@ class TupliteTable<T extends TupliteItem> {
     if (this.tableExists) {
       this.setBoolColumns()
       this.createIndices(indices)
-
-      console.log(
-        1111,
-        this.dbWrapper.getAs("PRAGMA index_list(" + this.table + ")")
-      )
     }
   }
 
-  // index name: idx_tuplite_table_column
-
-  private getCurrentIndices(): (keyof T)[] {
+  private getCurrentIndices(): string[] {
     const l = ("idx_tuplite_" + this.table + "_").length
     return this.dbWrapper
       .getAs<{ name: string }>("PRAGMA index_list(" + this.table + ")")
@@ -72,23 +62,25 @@ class TupliteTable<T extends TupliteItem> {
       .map((item) => item.name.substring(l))
   }
 
-  private createIndices(indices: (keyof T)[]) {
+  private createIndices(indices: string[]) {
     this.getCurrentIndices().forEach((index) => {
       if (!indices.includes(index)) {
+        console.log("Dropping index", index)
         this.dbWrapper.runQuery(`DROP INDEX idx_tuplite_${this.table}_${index}`)
       }
     })
 
+    const existingIndices = this.getCurrentIndices()
+
     indices.forEach((index) => {
-      if (!this.getCurrentIndices().includes(index)) {
+      if (!existingIndices.includes(index)) {
+        console.log("Creating index", index)
         this.dbWrapper.runQuery(
           `CREATE INDEX idx_tuplite_${this.table}_${index} ON ${this.table} (${index})`
         )
       }
     })
   }
-
-  // private setIndices(indices: (keyof T)[]) {
 
   private setBoolColumns() {
     this.boolColumns = this.dbWrapper
@@ -128,10 +120,6 @@ class TupliteTable<T extends TupliteItem> {
 
     this.setBoolColumns()
     this.createIndices(this.indices)
-    console.log(
-      1111,
-      this.dbWrapper.getAs("PRAGMA index_list(" + this.table + ")")
-    )
   }
 
   add(item: T) {

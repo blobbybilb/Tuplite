@@ -50,7 +50,10 @@ users.mod({ id: 1 }, { name: "test1-updated" }); // modifies the 1st item to: [{
 
 users.del({ active: false }); // deletes inactive users
 
-// And that's the entire API
+// Note: the db.openTable method takes a second optional argument, which is a list of indexes to create. Example:
+const users = db.openTable<User>("user", ["id", "name"]); // creates indexes for the id and name columns, which can speed up read queries (but does come with an extra storage and write overhead)
+
+// And that's the entire API!
 ```
 
 ## History/Name
@@ -68,5 +71,3 @@ type QueryItem<T extends TupliteItem> = {
 ```
 
 Then, I decided to make it a proper project, making it work with Deno and Node, and not doing questionable things like loading all the rows into memory when querying by functions (it now checks them one at a time). I made some final improvements (like allowing queries by function in `del` and `mod` as well as in `get`), and I think it is now feature complete and ready to be used.
-
-TODO create index option?

@@ -1,5 +1,5 @@
 import { TupliteDB } from "./tuplite.js"
-import type { TupliteItem } from "./types.js"
+import type { QueryItem, TupliteItem } from "./types.js"
 
 console.log("\n\n\n")
 
@@ -161,5 +161,26 @@ console.log(
   "Update with function:",
   testTable2.get({ testint2: 100 }).length === 2
 )
+
+// console.log("\n")
+
+// const testTable3 = db.openTable<TestItem1>("test_3", ["teststr1", "testint1"])
+// console.log(testTable3.getCurrentIndices())
+
+// testTable3.add({ teststr1: "test1", testint1: 1, testbool1: true })
+// console.log(testTable3.getCurrentIndices())
+
+// const testTable3_2 = db.openTable<TestItem2>("test_3", [
+//   "testbool1",
+//   "testint1",
+// ])
+// console.log(testTable3_2.getCurrentIndices())
+
+// console.log(
+//   db
+//     .openTable<TestItem1>("test_3", ["teststr1", "testint1", "testbool1"])
+//     .getCurrentIndices()
+// )
+// console.log(db.openTable<TestItem1>("test_3", []).getCurrentIndices())
 
 console.log("\n\n\n")
