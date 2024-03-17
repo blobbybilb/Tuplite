@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "tuplite": "^1.0.4",
+    "tuplite": "^1.1.1",
     "typescript": "^5.4.2"
   },
   "type": "module"

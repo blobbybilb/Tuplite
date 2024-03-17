@@ -9,8 +9,8 @@ export class DenoSQLiteWASMWrapper extends SQLiteWrapper {
 
   constructor(path?: string) {
     super()
-    this.dbPath = path ?? ":memory:"
-    this.db = new DB(this.dbPath, { mode: "create" })
+    this.dbPath = path ?? ":memory:" // check this later, it works though
+    this.db = new DB(path, { mode: "create" })
     this.db.execute("PRAGMA journal_mode = WAL;")
   }
 
