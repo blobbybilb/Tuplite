@@ -8,7 +8,7 @@ Made for TypeScript ~~and Python~~, and uses their type systems to provide a ful
 
 ```bash
 npm install tuplite # Node
-deno add @blob/tuplite # Deno
+deno add @blob/tuplite # Deno (when running, it requires --unstable-ffi)
 bun install tuplite # Bun
 
 ```
