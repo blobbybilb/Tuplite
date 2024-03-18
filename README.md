@@ -2,7 +2,7 @@
 
 A zero-config, zero-SQL type based DB interface (for SQLite)
 
-Made for TypeScript ~~and Python~~, and uses their type systems to provide a fully managed, type-safe, and easy to use DB interface.
+Made for TypeScript ~~and Python~~, and uses their type systems to provide a fully managed, type-safe, and easy to use DB interface. Not intended for high performance (it's a replacement for JSON files in a directory, not for ORMs/document DBs).
 
 ## Install
 
