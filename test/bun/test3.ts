@@ -61,6 +61,7 @@ time('sqlite query');
 
 for (let i = 0; i < 1000; i++) {
     tupliteDB.get({ name: n => n.startsWith('name') });
+    // tupliteDB.get({ name: "name 1" });
 }
 
 time('tuplite query');
@@ -73,7 +74,7 @@ for (let i = 0; i < 10000; i++) {
 time('sqlite query');
 
 for (let i = 0; i < 10000; i++) {
-    tupliteDB.get({ num: n => n > 0.99 });
+    tupliteDB.get({ num: n => n > 0.5 });
 }
 
 time('tuplite query');
